@@ -20,8 +20,10 @@ public class glm98Project2 {
     boolean cpuIdle = true;
 
     public static void main(String[] args) {
+        //self instantiation to fiddle with nested classes
         glm98Project2 o = new glm98Project2();
 
+        //Precon checking
         if(args.length == 0) {
             System.out.println("Parameter usage: (Average arrival rate) (Average CPU service time) (Average disk service time)");
             System.out.println("Example command: \njava glm98Project2 10 0.04");
@@ -43,17 +45,21 @@ public class glm98Project2 {
             return;
         }
 
+        //Initial startup
         double initialArrivalTime = generateTime(ARRIVAL_RATE);
         eventQueue.add(o.new ArrivalEvent(initialArrivalTime, o.new Process(initialArrivalTime, pid)));
 
+        //Main execution loop
         while(processesHandled < FINAL_PROCESS_COUNT)
             eventQueue.poll().handle();
 
+        //Final stat calculation
         double meanTurnaround = totalTurnaroundTime / FINAL_PROCESS_COUNT;
         double meanThroughput = FINAL_PROCESS_COUNT / simulationTime;
         double meanUtilization = activeTime / simulationTime;
         double meanInQueue = weightedTotalWaitingCPU / simulationTime;
 
+        //Logging
         System.out.println("Average turnaround time: " + meanTurnaround);
         System.out.println("Average throughput: " + meanThroughput);
         System.out.println("Average utilization: " + meanUtilization);
@@ -62,28 +68,25 @@ public class glm98Project2 {
 
         try {
 
-            FileWriter writer = new FileWriter("logfile.csv");
-            writer.write(meanTurnaround + ", " + meanThroughput + ", " + meanUtilization + ", " + meanInQueue + "\n");
+            FileWriter writer = new FileWriter("logfile.csv", true);
+            writer.write(ARRIVAL_RATE + ", " + meanTurnaround + ", " + meanThroughput + ", " + meanUtilization + ", " + meanInQueue + "\n");
             writer.flush();
             writer.close();
         } catch(IOException e) {
             System.out.println("Error creating log data");
         }
-
-        //CPUCompletionEvent event = o.new CPUCompletionEvent(10, o.new Process(10, 10));
-       // g.eventQueue.add(new ArrivalEvent(10, new Process(10, g.pid)));
-        //System.out.println("Timestamp: " + g.eventQueue.peek().timestamp);
-
-        /*
-        System.out.println(args.length);
-        System.out.println("Lambda: " + args[0]);
-        System.out.println("Mu: " + args[1]);*/
     }
 
+    /*
+    Generates interarrival times following a poisson distribution, or service times using exponential distribution
+     */
     public static double generateTime(double rate) {
         return (-(1/rate) * Math.log(1 - Math.random()));
     }
 
+    /*
+    Event representing a process completing its execution on the CPU and exiting the system
+     */
     class CompletionEvent extends Event {
         CompletionEvent(double timestamp, Process process) {
             super(timestamp, process);
@@ -107,6 +110,10 @@ public class glm98Project2 {
         }
     }
 
+    /*
+    Event representing the arrival of a process to the system, from which point it will enter the CPU if it is idle,
+    or joins the ready queue otherwise. It then schedules the next arrival.
+     */
     class ArrivalEvent extends Event {
         ArrivalEvent(double timestamp, Process process) {
             super(timestamp, process);
@@ -131,6 +138,9 @@ public class glm98Project2 {
         }
     }
 
+    /*
+    Represents a process in the system. Each process keeps track of its pid, arrival time, and requested service time
+     */
     class Process {
         double arrivalTime, serviceTime;
         int id;
@@ -143,6 +153,9 @@ public class glm98Project2 {
 
     }
 
+    /*
+    Abstract class representing an Event.
+     */
     abstract class Event {
         double timestamp;
         Process process;
@@ -155,6 +168,9 @@ public class glm98Project2 {
         abstract void handle();
     }
 
+    /*
+    Utility class to allow Events to be sorted automatically in the eventQueue (a Priority Queue)
+     */
     static class EventComparator implements Comparator<Event> {
         @Override
         public int compare(Event e1, Event e2) {
@@ -166,75 +182,3 @@ public class glm98Project2 {
         }
     }
 }
-
-/*class g {
-    static boolean cpu_idle = true;
-    static double simulationTime = 0;
-    static double cpuUsageTime = 0;
-    static double totalTurnaroundTime = 0;
-    static int pid = 0;
-    static int totalWaitingCPU = 0;
-    static int waitingChecksPerformed = 0;
-    static int processesHandled = 0;
-    static PriorityQueue<Event> eventQueue = new PriorityQueue<Event>(new EventComparator());
-    static Queue<Process> readyQueue = new PriorityQueue<Process>();
-}*/
-/*
-class CPUCompletionEvent extends Event {
-    CPUCompletionEvent(double timestamp, Process process) {
-        super(timestamp, process);
-    }
-
-    @Override
-    void handle() {
-    }
-}
-
-class ArrivalEvent extends Event {
-    ArrivalEvent(double timestamp, Process process) {
-        super(timestamp, process);
-    }
-
-    @Override
-    void handle() {
-
-    }
-}
-
-class Process {
-    double timestamp,
-            lastCPUStartTime;
-    int id;
-
-    public Process(double timestamp, int id) {
-        this.timestamp = timestamp;
-        this.id = id;
-        lastCPUStartTime = 0;
-    }
-
-}
-
-abstract class Event {
-    double timestamp;
-    Process process;
-
-    public Event(double timestamp, Process process) {
-        this.timestamp = timestamp;
-        this.process = process;
-    }
-
-    abstract void handle();
-}
-
-class EventComparator implements Comparator<Event> {
-    @Override
-    public int compare(Event e1, Event e2) {
-        if(e1.timestamp < e2.timestamp)
-            return -1;
-        if(e1.timestamp > e2.timestamp)
-            return 1;
-        return 0;
-    }
-}
-
- */
